@@ -647,7 +647,7 @@ with tab_briefing:
                     
                     # Construir o prompt com todas as informações coletadas
                     prompt_parts = [
-                        f"# BRIEFING {tipo_briefing.upper()} - Broto_Tecnologia",
+                        f"# BRIEFING {tipo_briefing.upper()} - Broto",
                         f"**Projeto:** {campos_briefing['basicos']['nome_projeto']}",
                         f"**Responsável:** {campos_briefing['basicos']['responsavel']}",
                         f"**Data de Entrega:** {campos_briefing['basicos']['data_entrega']}",
@@ -665,7 +665,7 @@ with tab_briefing:
                         prompt_parts.append(f"**{campo.replace('_', ' ').title()}:** {valor}")
                     
                     prompt = "\n".join(prompt_parts)
-                    resposta = modelo_texto.generate_content(prompt)
+                    resposta = modelo_texto.generate_content('Gere o seguinte documento de Briefing EM PORTUGUÊS BRASILEIRO ' + prompt)
 
                     prompt_design = f"""
                     Você é um designer que trabalha para a Macfor Marketing digital e você deve gerar conteúdo criativo para o cliente Broto_Tecnologia.
