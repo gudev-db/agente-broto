@@ -35,7 +35,7 @@ db = client2['arquivos_planejamento']
 collection = db['auto_doc']
 banco = client2["arquivos_planejamento"]
 db_clientes = banco["clientes"]  
-db_briefings = banco["briefings_Broto_Tecnologia"]  
+db_briefings = banco["briefings_Broto"]  
 
 
 # Carrega diretrizes
@@ -43,18 +43,18 @@ with open('data.txt', 'r') as file:
     conteudo = file.read()
 
 tab_chatbot, tab_aprovacao, tab_geracao, tab_briefing, tab_briefing_gerados, tab_resumo = st.tabs([
-    "💬 Chatbot Broto_Tecnologia", 
+    "💬 Chatbot Broto", 
     "✅ Aprovação de Conteúdo", 
     "✨ Geração de Conteúdo",
-    "📋 Geração de Briefing Broto_Tecnologia",  
+    "📋 Geração de Briefing Broto",  
     "📋 Briefings Gerados",
     "📝 Resumo de Textos",
 ])
 
 
 with tab_chatbot:  
-    st.header("Chat Virtual Broto_Tecnologia")
-    st.caption("Pergunte qualquer coisa sobre as diretrizes e informações da Broto_Tecnologia")
+    st.header("Chat Virtual Broto")
+    st.caption("Pergunte qualquer coisa sobre as diretrizes e informações da Broto")
     
     # Inicializa o histórico de chat na session_state
     if "messages" not in st.session_state:
@@ -74,8 +74,8 @@ with tab_chatbot:
         
         # Prepara o contexto com as diretrizes
         contexto = f"""
-        Você é um assistente virtual especializado na Broto_Tecnologia
-        Baseie todas as suas respostas nestas diretrizes oficiais da Broto_Tecnologia
+        Você é um assistente virtual especializado na Broto
+        Baseie todas as suas respostas nestas diretrizes oficiais da Broto
         {conteudo}
 
 
