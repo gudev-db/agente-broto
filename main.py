@@ -42,14 +42,103 @@ db_briefings = banco["briefings_Broto"]
 with open('data.txt', 'r') as file:
     conteudo = file.read()
 
-tab_chatbot, tab_aprovacao, tab_geracao, tab_briefing, tab_briefing_gerados, tab_resumo = st.tabs([
+
+tab_chatbot, tab_aprovacao, tab_geracao, tab_briefing, tab_briefing_gerados, tab_resumo, tab_diretrizes = st.tabs([
     "💬 Chatbot Broto", 
     "✅ Aprovação de Conteúdo", 
     "✨ Geração de Conteúdo",
     "📋 Geração de Briefing Broto",  
     "📋 Briefings Gerados",
     "📝 Resumo de Textos",
+    "📌 Do's & Don'ts"  # Nova aba
 ])
+
+with tab_diretrizes:
+    st.header("Gestão de Diretrizes da Marca")
+    st.caption("Adicione ou edite os Do's and Don'ts que serão usados em todas as análises e criações de conteúdo")
+    
+    # Conexão com MongoDB para armazenar as diretrizes
+    db_diretrizes = client2['broto_diretrizes']
+    collection_diretrizes = db_diretrizes['dos_and_donts']
+    
+    # Carrega as diretrizes existentes
+    diretrizes_existentes = collection_diretrizes.find_one({"marca": "Broto"})
+    
+    if not diretrizes_existentes:
+        # Inicializa se não existir
+        collection_diretrizes.insert_one({
+            "marca": "Broto",
+            "dos": ["Seguir o manual de identidade visual", "Usar tom de voz profissional"],
+            "donts": ["Usar cores fora da paleta", "Modificar o logo"],
+            "ultima_atualizacao": datetime.datetime.now()
+        })
+        diretrizes_existentes = collection_diretrizes.find_one({"marca": "Broto"})
+    
+    # Interface para edição
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("✅ Do's")
+        dos_lista = st.text_area(
+            "Lista de Do's (um por linha):",
+            value="\n".join(diretrizes_existentes.get('dos', [])),
+            height=300,
+            key="dos_area"
+        )
+    
+    with col2:
+        st.subheader("❌ Don'ts")
+        donts_lista = st.text_area(
+            "Lista de Don'ts (um por linha):",
+            value="\n".join(diretrizes_existentes.get('donts', [])),
+            height=300,
+            key="donts_area"
+        )
+    
+    # Botões de ação
+    if st.button("💾 Salvar Alterações", key="save_diretrizes"):
+        # Processa as listas
+        novos_dos = [item.strip() for item in dos_lista.split('\n') if item.strip()]
+        novos_donts = [item.strip() for item in donts_lista.split('\n') if item.strip()]
+        
+        # Atualiza no MongoDB
+        collection_diretrizes.update_one(
+            {"marca": "Broto"},
+            {
+                "$set": {
+                    "dos": novos_dos,
+                    "donts": novos_donts,
+                    "ultima_atualizacao": datetime.datetime.now()
+                }
+            }
+        )
+        
+        st.success("Diretrizes atualizadas com sucesso!")
+        st.rerun()
+    
+    if st.button("🔄 Restaurar Padrões", key="reset_diretrizes"):
+        collection_diretrizes.update_one(
+            {"marca": "Broto"},
+            {
+                "$set": {
+                    "dos": ["Seguir o manual de identidade visual", "Usar tom de voz profissional"],
+                    "donts": ["Usar cores fora da paleta", "Modificar o logo"],
+                    "ultima_atualizacao": datetime.datetime.now()
+                }
+            }
+        )
+        st.success("Diretrizes restauradas para os valores padrão")
+        st.rerun()
+    
+    st.markdown("---")
+    st.subheader("Como usar nas outras abas:")
+    st.markdown("""
+    - **Aprovação de Conteúdo**: As diretrizes serão automaticamente incluídas na análise
+    - **Geração de Conteúdo**: Os criativos seguirão estas regras
+    - **Briefings**: Serão incluídas como referência obrigatória
+    """)
+    
+    st.caption(f"Última atualização: {diretrizes_existentes['ultima_atualizacao'].strftime('%d/%m/%Y %H:%M')}")
 
 
 with tab_chatbot:  
