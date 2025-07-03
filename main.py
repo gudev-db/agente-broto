@@ -53,7 +53,153 @@ tab_chatbot, tab_aprovacao, tab_geracao, tab_briefing, tab_briefing_gerados, tab
     "📌 Do's & Don'ts"  # Nova aba
 ])
 
+# --- Configuração de Autenticação Simples ---
+def check_password():
+    """Retorna True se o usuário fornecer a senha correta."""
+    
+    def password_entered():
+        """Verifica se a senha está correta."""
+        if st.session_state["password"] == "senha123":
+            st.session_state["password_correct"] = True
+            st.session_state["user"] = "admin"
+            del st.session_state["password"]  # Não armazena a senha
+        else:
+            st.session_state["password_correct"] = False
+
+    if "password_correct" not in st.session_state:
+        # Mostra o input para senha primeiro
+        st.text_input(
+            "Senha", type="password", on_change=password_entered, key="password"
+        )
+        return False
+    elif not st.session_state["password_correct"]:
+        # Senha incorreta, mostra input + erro
+        st.text_input(
+            "Senha", type="password", on_change=password_entered, key="password"
+        )
+        st.error("😕 Senha incorreta")
+        return False
+    else:
+        # Senha correta
+        return True
+
+# --- Nova Aba para Reescrever Posts ---
+tab_rewriter = st.tabs(["✍️ Reescrever Conteúdo"])[0]  # Adicione esta linha com as outras abas
+
+with tab_rewriter:
+    st.header("Reescrever Conteúdo para a Broto")
+    st.caption("Cole um texto qualquer e o sistema irá reescrevê-lo seguindo as diretrizes da Broto")
+    
+    col_original, col_reescrito = st.columns(2)
+    
+    with col_original:
+        st.subheader("Texto Original")
+        texto_original = st.text_area(
+            "Cole o texto que deseja reescrever:",
+            height=400,
+            placeholder="Insira aqui o texto que precisa ser adaptado para a Broto...",
+            key="texto_original_rewriter"
+        )
+        
+        # Opções de reescrita
+        with st.expander("⚙️ Configurações de Reescrita"):
+            tom_voz = st.selectbox(
+                "Tom de Voz:",
+                ["Profissional", "Informativo", "Inspirador", "Técnico"],
+                index=0
+            )
+            
+            formato = st.selectbox(
+                "Formato:",
+                ["Post Social", "Artigo Blog", "Email Marketing", "Relatório Técnico"],
+                index=0
+            )
+            
+            incluir_hashtags = st.checkbox(
+                "Incluir hashtags sugeridas (para posts sociais)",
+                value=True if formato == "Post Social" else False
+            )
+    
+    with col_reescrito:
+        st.subheader("Versão Broto")
+        
+        if st.button("Reescrever Conteúdo", key="btn_reescrever"):
+            if not texto_original.strip():
+                st.warning("Por favor, insira um texto para reescrever")
+            else:
+                with st.spinner("Adaptando conteúdo para a Broto..."):
+                    try:
+                        # Carrega as diretrizes atuais
+                        diretrizes = collection_diretrizes.find_one({"marca": "Broto"})
+                        dos = "\n- ".join(diretrizes.get('dos', []))
+                        donts = "\n- ".join(diretrizes.get('donts', []))
+                        
+                        prompt = f"""
+                        Reescreva o seguinte conteúdo para ser publicado nos canais da Broto,
+                        seguindo rigorosamente estas diretrizes da marca:
+                        
+                        ✅ DO'S:
+                        - {dos}
+                        
+                        ❌ DON'TS:
+                        - {donts}
+                        
+                        OUTRAS DIRETRIZES:
+                        {conteudo}
+                        
+                        INSTRUÇÕES ESPECÍFICAS:
+                        - Tom de voz: {tom_voz.lower()}
+                        - Formato: {formato.lower()}
+                        - {"Incluir hashtags relevantes no final" if incluir_hashtags else "Sem hashtags"}
+                        - Manter o significado original mas adaptar ao estilo Broto
+                        - Priorizar clareza e objetividade
+                        - Usar terminologia do agronegócio quando apropriado
+                        - Seguir o manual de identidade visual da Broto
+                        - Respeitar a paleta de cores e tipografia da marca
+                        
+                        TEXTO ORIGINAL:
+                        {texto_original}
+                        
+                        ESTRUTURA DA RESPOSTA:
+                        1. Título adaptado (se aplicável)
+                        2. Corpo do texto reescrito
+                        3. {"Hashtags sugeridas (se for post social)" if incluir_hashtags else ""}
+                        """
+                        
+                        resposta = modelo_texto.generate_content(prompt)
+                        
+                        # Exibe o resultado
+                        st.markdown(resposta.text)
+                        
+                        # Botão para copiar
+                        st.download_button(
+                            "📋 Copiar Texto Adaptado",
+                            data=resposta.text,
+                            file_name="conteudo_adaptado_broto.txt",
+                            mime="text/plain"
+                        )
+                        
+                    except Exception as e:
+                        st.error(f"Erro ao reescrever conteúdo: {str(e)}")
+
+# --- Modificação na Aba de Diretrizes ---
 with tab_diretrizes:
+    st.header("Gestão de Diretrizes da Marca")
+    
+    # Verifica se o usuário está logado
+    if not check_password():
+        st.warning("Por favor, faça login para editar as diretrizes")
+        st.stop()  # Para a execução se não estiver logado
+    
+    # Mostra o botão de logout
+    if st.button("Logout"):
+        for key in ["password_correct", "user"]:
+            if key in st.session_state:
+                del st.session_state[key]
+        st.rerun()
+    
+    st.write(f'Bem-vindo administrador!')
+    st.caption("Adicione ou edite os Do's and Don'ts que serão usados em todas as análises e criações de conteúdo")
     st.header("Gestão de Diretrizes da Marca")
     st.caption("Adicione ou edite os Do's and Don'ts que serão usados em todas as análises e criações de conteúdo")
     
