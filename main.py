@@ -43,14 +43,15 @@ with open('data.txt', 'r') as file:
     conteudo = file.read()
 
 
-tab_chatbot, tab_aprovacao, tab_geracao, tab_briefing, tab_briefing_gerados, tab_resumo, tab_diretrizes = st.tabs([
+tab_chatbot, tab_aprovacao, tab_geracao, tab_briefing, tab_briefing_gerados, tab_resumo, tab_diretrizes, tab_rewriter = st.tabs([
     "💬 Chatbot Broto", 
     "✅ Aprovação de Conteúdo", 
     "✨ Geração de Conteúdo",
     "📋 Geração de Briefing Broto",  
     "📋 Briefings Gerados",
     "📝 Resumo de Textos",
-    "📌 Do's & Don'ts"  # Nova aba
+    "📌 Do's & Don'ts",
+    "Reescrever Conteúdo"
 ])
 
 # --- Configuração de Autenticação Simples ---
