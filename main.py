@@ -84,8 +84,7 @@ def check_password():
         # Senha correta
         return True
 
-# --- Nova Aba para Reescrever Posts ---
-tab_rewriter = st.tabs(["✍️ Reescrever Conteúdo"])[0]  # Adicione esta linha com as outras abas
+
 
 with tab_rewriter:
     st.header("Reescrever Conteúdo para a Broto")
