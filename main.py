@@ -42,18 +42,6 @@ db_briefings = banco["briefings_Broto"]
 with open('data.txt', 'r') as file:
     conteudo = file.read()
 
-
-tab_chatbot, tab_aprovacao, tab_geracao, tab_briefing, tab_briefing_gerados, tab_resumo, tab_diretrizes, tab_rewriter = st.tabs([
-    "💬 Chatbot Broto", 
-    "✅ Aprovação de Conteúdo", 
-    "✨ Geração de Conteúdo",
-    "📋 Geração de Briefing Broto",  
-    "📋 Briefings Gerados",
-    "📝 Resumo de Textos",
-    "📌 Do's & Don'ts",
-    "Reescrever Conteúdo"
-])
-
 # --- Configuração de Autenticação Simples ---
 def check_password():
     """Retorna True se o usuário fornecer a senha correta."""
@@ -83,208 +71,22 @@ def check_password():
     else:
         # Senha correta
         return True
+        
+tab_chatbot, tab_aprovacao, tab_geracao, tab_briefing, tab_briefing_gerados, tab_resumo, tab_diretrizes, tab_rewriter = st.tabs([
+    "💬 Chatbot Broto", 
+    "✅ Aprovação de Conteúdo", 
+    "✨ Geração de Conteúdo",
+    "📋 Geração de Briefing Broto",  
+    "📋 Briefings Gerados",
+    "📝 Resumo de Textos",
+    "📌 Do's & Don'ts",
+    "Reescrever Conteúdo",
+])
 
 
 
-with tab_rewriter:
-    st.header("Reescrever Conteúdo para a Broto")
-    st.caption("Cole um texto qualquer e o sistema irá reescrevê-lo seguindo as diretrizes da Broto")
-    
-    col_original, col_reescrito = st.columns(2)
-    
-    with col_original:
-        st.subheader("Texto Original")
-        texto_original = st.text_area(
-            "Cole o texto que deseja reescrever:",
-            height=400,
-            placeholder="Insira aqui o texto que precisa ser adaptado para a Broto...",
-            key="texto_original_rewriter"
-        )
-        
-        # Opções de reescrita
-        with st.expander("⚙️ Configurações de Reescrita"):
-            tom_voz = st.selectbox(
-                "Tom de Voz:",
-                ["Profissional", "Informativo", "Inspirador", "Técnico"],
-                index=0
-            )
-            
-            formato = st.selectbox(
-                "Formato:",
-                ["Post Social", "Artigo Blog", "Email Marketing", "Relatório Técnico"],
-                index=0
-            )
-            
-            incluir_hashtags = st.checkbox(
-                "Incluir hashtags sugeridas (para posts sociais)",
-                value=True if formato == "Post Social" else False
-            )
-    
-    with col_reescrito:
-        st.subheader("Versão Broto")
-        
-        if st.button("Reescrever Conteúdo", key="btn_reescrever"):
-            if not texto_original.strip():
-                st.warning("Por favor, insira um texto para reescrever")
-            else:
-                with st.spinner("Adaptando conteúdo para a Broto..."):
-                    try:
-                        # Carrega as diretrizes atuais
-                        diretrizes = collection_diretrizes.find_one({"marca": "Broto"})
-                        dos = "\n- ".join(diretrizes.get('dos', []))
-                        donts = "\n- ".join(diretrizes.get('donts', []))
-                        
-                        prompt = f"""
-                        Reescreva o seguinte conteúdo para ser publicado nos canais da Broto,
-                        seguindo rigorosamente estas diretrizes da marca:
-                        
-                        ✅ DO'S:
-                        - {dos}
-                        
-                        ❌ DON'TS:
-                        - {donts}
-                        
-                        OUTRAS DIRETRIZES:
-                        {conteudo}
-                        
-                        INSTRUÇÕES ESPECÍFICAS:
-                        - Tom de voz: {tom_voz.lower()}
-                        - Formato: {formato.lower()}
-                        - {"Incluir hashtags relevantes no final" if incluir_hashtags else "Sem hashtags"}
-                        - Manter o significado original mas adaptar ao estilo Broto
-                        - Priorizar clareza e objetividade
-                        - Usar terminologia do agronegócio quando apropriado
-                        - Seguir o manual de identidade visual da Broto
-                        - Respeitar a paleta de cores e tipografia da marca
-                        
-                        TEXTO ORIGINAL:
-                        {texto_original}
-                        
-                        ESTRUTURA DA RESPOSTA:
-                        1. Título adaptado (se aplicável)
-                        2. Corpo do texto reescrito
-                        3. {"Hashtags sugeridas (se for post social)" if incluir_hashtags else ""}
-                        """
-                        
-                        resposta = modelo_texto.generate_content(prompt)
-                        
-                        # Exibe o resultado
-                        st.markdown(resposta.text)
-                        
-                        # Botão para copiar
-                        st.download_button(
-                            "📋 Copiar Texto Adaptado",
-                            data=resposta.text,
-                            file_name="conteudo_adaptado_broto.txt",
-                            mime="text/plain"
-                        )
-                        
-                    except Exception as e:
-                        st.error(f"Erro ao reescrever conteúdo: {str(e)}")
 
-# --- Modificação na Aba de Diretrizes ---
-with tab_diretrizes:
-    st.header("Gestão de Diretrizes da Marca")
-    
-    # Verifica se o usuário está logado
-    if not check_password():
-        st.warning("Por favor, faça login para editar as diretrizes")
-        st.stop()  # Para a execução se não estiver logado
-    
-    # Mostra o botão de logout
-    if st.button("Logout"):
-        for key in ["password_correct", "user"]:
-            if key in st.session_state:
-                del st.session_state[key]
-        st.rerun()
-    
-    st.write(f'Bem-vindo administrador!')
-    st.caption("Adicione ou edite os Do's and Don'ts que serão usados em todas as análises e criações de conteúdo")
-    st.header("Gestão de Diretrizes da Marca")
-    st.caption("Adicione ou edite os Do's and Don'ts que serão usados em todas as análises e criações de conteúdo")
-    
-    # Conexão com MongoDB para armazenar as diretrizes
-    db_diretrizes = client2['broto_diretrizes']
-    collection_diretrizes = db_diretrizes['dos_and_donts']
-    
-    # Carrega as diretrizes existentes
-    diretrizes_existentes = collection_diretrizes.find_one({"marca": "Broto"})
-    
-    if not diretrizes_existentes:
-        # Inicializa se não existir
-        collection_diretrizes.insert_one({
-            "marca": "Broto",
-            "dos": ["Seguir o manual de identidade visual", "Usar tom de voz profissional"],
-            "donts": ["Usar cores fora da paleta", "Modificar o logo"],
-            "ultima_atualizacao": datetime.datetime.now()
-        })
-        diretrizes_existentes = collection_diretrizes.find_one({"marca": "Broto"})
-    
-    # Interface para edição
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.subheader("✅ Do's")
-        dos_lista = st.text_area(
-            "Lista de Do's (um por linha):",
-            value="\n".join(diretrizes_existentes.get('dos', [])),
-            height=300,
-            key="dos_area"
-        )
-    
-    with col2:
-        st.subheader("❌ Don'ts")
-        donts_lista = st.text_area(
-            "Lista de Don'ts (um por linha):",
-            value="\n".join(diretrizes_existentes.get('donts', [])),
-            height=300,
-            key="donts_area"
-        )
-    
-    # Botões de ação
-    if st.button("💾 Salvar Alterações", key="save_diretrizes"):
-        # Processa as listas
-        novos_dos = [item.strip() for item in dos_lista.split('\n') if item.strip()]
-        novos_donts = [item.strip() for item in donts_lista.split('\n') if item.strip()]
-        
-        # Atualiza no MongoDB
-        collection_diretrizes.update_one(
-            {"marca": "Broto"},
-            {
-                "$set": {
-                    "dos": novos_dos,
-                    "donts": novos_donts,
-                    "ultima_atualizacao": datetime.datetime.now()
-                }
-            }
-        )
-        
-        st.success("Diretrizes atualizadas com sucesso!")
-        st.rerun()
-    
-    if st.button("🔄 Restaurar Padrões", key="reset_diretrizes"):
-        collection_diretrizes.update_one(
-            {"marca": "Broto"},
-            {
-                "$set": {
-                    "dos": ["Seguir o manual de identidade visual", "Usar tom de voz profissional"],
-                    "donts": ["Usar cores fora da paleta", "Modificar o logo"],
-                    "ultima_atualizacao": datetime.datetime.now()
-                }
-            }
-        )
-        st.success("Diretrizes restauradas para os valores padrão")
-        st.rerun()
-    
-    st.markdown("---")
-    st.subheader("Como usar nas outras abas:")
-    st.markdown("""
-    - **Aprovação de Conteúdo**: As diretrizes serão automaticamente incluídas na análise
-    - **Geração de Conteúdo**: Os criativos seguirão estas regras
-    - **Briefings**: Serão incluídas como referência obrigatória
-    """)
-    
-    st.caption(f"Última atualização: {diretrizes_existentes['ultima_atualizacao'].strftime('%d/%m/%Y %H:%M')}")
+
 
 
 with tab_chatbot:  
@@ -1313,16 +1115,205 @@ with tab_resumo:
                 
                 with col_acao3:
                     st.write("")  # Espaçamento
+
+with tab_rewriter:
+    st.header("Reescrever Conteúdo para a Broto")
+    st.caption("Cole um texto qualquer e o sistema irá reescrevê-lo seguindo as diretrizes da Broto")
     
-    # Estilo adicional
+    col_original, col_reescrito = st.columns(2)
+    
+    with col_original:
+        st.subheader("Texto Original")
+        texto_original = st.text_area(
+            "Cole o texto que deseja reescrever:",
+            height=400,
+            placeholder="Insira aqui o texto que precisa ser adaptado para a Broto...",
+            key="texto_original_rewriter"
+        )
+        
+        # Opções de reescrita
+        with st.expander("⚙️ Configurações de Reescrita"):
+            tom_voz = st.selectbox(
+                "Tom de Voz:",
+                ["Profissional", "Informativo", "Inspirador", "Técnico"],
+                index=0
+            )
+            
+            formato = st.selectbox(
+                "Formato:",
+                ["Post Social", "Artigo Blog", "Email Marketing", "Relatório Técnico"],
+                index=0
+            )
+            
+            incluir_hashtags = st.checkbox(
+                "Incluir hashtags sugeridas (para posts sociais)",
+                value=True if formato == "Post Social" else False
+            )
+    
+    with col_reescrito:
+        st.subheader("Versão Broto")
+        
+        if st.button("Reescrever Conteúdo", key="btn_reescrever"):
+            if not texto_original.strip():
+                st.warning("Por favor, insira um texto para reescrever")
+            else:
+                with st.spinner("Adaptando conteúdo para a Broto..."):
+                    try:
+                        # Carrega as diretrizes atuais
+                        diretrizes = collection_diretrizes.find_one({"marca": "Broto"})
+                        dos = "\n- ".join(diretrizes.get('dos', []))
+                        donts = "\n- ".join(diretrizes.get('donts', []))
+                        
+                        prompt = f"""
+                        Reescreva o seguinte conteúdo para ser publicado nos canais da Broto,
+                        seguindo rigorosamente estas diretrizes da marca:
+                        
+                        ✅ DO'S:
+                        - {dos}
+                        
+                        ❌ DON'TS:
+                        - {donts}
+                        
+                        OUTRAS DIRETRIZES:
+                        {conteudo}
+                        
+                        INSTRUÇÕES ESPECÍFICAS:
+                        - Tom de voz: {tom_voz.lower()}
+                        - Formato: {formato.lower()}
+                        - {"Incluir hashtags relevantes no final" if incluir_hashtags else "Sem hashtags"}
+                        - Manter o significado original mas adaptar ao estilo Broto
+                        - Priorizar clareza e objetividade
+                        - Usar terminologia do agronegócio quando apropriado
+                        - Seguir o manual de identidade visual da Broto
+                        - Respeitar a paleta de cores e tipografia da marca
+                        
+                        TEXTO ORIGINAL:
+                        {texto_original}
+                        
+                        ESTRUTURA DA RESPOSTA:
+                        1. Título adaptado (se aplicável)
+                        2. Corpo do texto reescrito
+                        3. {"Hashtags sugeridas (se for post social)" if incluir_hashtags else ""}
+                        """
+                        
+                        resposta = modelo_texto.generate_content(prompt)
+                        
+                        # Exibe o resultado
+                        st.markdown(resposta.text)
+                        
+                        # Botão para copiar
+                        st.download_button(
+                            "📋 Copiar Texto Adaptado",
+                            data=resposta.text,
+                            file_name="conteudo_adaptado_broto.txt",
+                            mime="text/plain"
+                        )
+                        
+                    except Exception as e:
+                        st.error(f"Erro ao reescrever conteúdo: {str(e)}")
+
+
+with tab_diretrizes:
+    st.header("Gestão de Diretrizes da Marca")
+    
+    # Verifica se o usuário está logado
+    if not check_password():
+        st.warning("Por favor, faça login para editar as diretrizes")
+        st.stop()  # Para a execução se não estiver logado
+    
+    # Mostra o botão de logout
+    if st.button("Logout"):
+        for key in ["password_correct", "user"]:
+            if key in st.session_state:
+                del st.session_state[key]
+        st.rerun()
+    
+    st.write(f'Bem-vindo administrador!')
+    st.caption("Adicione ou edite os Do's and Don'ts que serão usados em todas as análises e criações de conteúdo")
+    st.header("Gestão de Diretrizes da Marca")
+    st.caption("Adicione ou edite os Do's and Don'ts que serão usados em todas as análises e criações de conteúdo")
+    
+    # Conexão com MongoDB para armazenar as diretrizes
+    db_diretrizes = client2['broto_diretrizes']
+    collection_diretrizes = db_diretrizes['dos_and_donts']
+    
+    # Carrega as diretrizes existentes
+    diretrizes_existentes = collection_diretrizes.find_one({"marca": "Broto"})
+    
+    if not diretrizes_existentes:
+        # Inicializa se não existir
+        collection_diretrizes.insert_one({
+            "marca": "Broto",
+            "dos": ["Seguir o manual de identidade visual", "Usar tom de voz profissional"],
+            "donts": ["Usar cores fora da paleta", "Modificar o logo"],
+            "ultima_atualizacao": datetime.datetime.now()
+        })
+        diretrizes_existentes = collection_diretrizes.find_one({"marca": "Broto"})
+    
+    # Interface para edição
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("✅ Do's")
+        dos_lista = st.text_area(
+            "Lista de Do's (um por linha):",
+            value="\n".join(diretrizes_existentes.get('dos', [])),
+            height=300,
+            key="dos_area"
+        )
+    
+    with col2:
+        st.subheader("❌ Don'ts")
+        donts_lista = st.text_area(
+            "Lista de Don'ts (um por linha):",
+            value="\n".join(diretrizes_existentes.get('donts', [])),
+            height=300,
+            key="donts_area"
+        )
+    
+    # Botões de ação
+    if st.button("💾 Salvar Alterações", key="save_diretrizes"):
+        # Processa as listas
+        novos_dos = [item.strip() for item in dos_lista.split('\n') if item.strip()]
+        novos_donts = [item.strip() for item in donts_lista.split('\n') if item.strip()]
+        
+        # Atualiza no MongoDB
+        collection_diretrizes.update_one(
+            {"marca": "Broto"},
+            {
+                "$set": {
+                    "dos": novos_dos,
+                    "donts": novos_donts,
+                    "ultima_atualizacao": datetime.datetime.now()
+                }
+            }
+        )
+        
+        st.success("Diretrizes atualizadas com sucesso!")
+        st.rerun()
+    
+    if st.button("🔄 Restaurar Padrões", key="reset_diretrizes"):
+        collection_diretrizes.update_one(
+            {"marca": "Broto"},
+            {
+                "$set": {
+                    "dos": ["Seguir o manual de identidade visual", "Usar tom de voz profissional"],
+                    "donts": ["Usar cores fora da paleta", "Modificar o logo"],
+                    "ultima_atualizacao": datetime.datetime.now()
+                }
+            }
+        )
+        st.success("Diretrizes restauradas para os valores padrão")
+        st.rerun()
+    
+    st.markdown("---")
+    st.subheader("Como usar nas outras abas:")
     st.markdown("""
-    <style>
-        div[data-testid="stExpander"] details {
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-        }
-        div[data-testid="stVerticalBlock"] > div[style*="flex-direction: column"] > div[data-testid="stVerticalBlock"] {
-            border-radius: 8px;
-        }
-    </style>
-    """, unsafe_allow_html=True)
+    - **Aprovação de Conteúdo**: As diretrizes serão automaticamente incluídas na análise
+    - **Geração de Conteúdo**: Os criativos seguirão estas regras
+    - **Briefings**: Serão incluídas como referência obrigatória
+    """)
+    
+    st.caption(f"Última atualização: {diretrizes_existentes['ultima_atualizacao'].strftime('%d/%m/%Y %H:%M')}")
+
+  
