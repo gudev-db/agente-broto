@@ -26,7 +26,7 @@ st.header(' ')
 
 gemini_api_key = os.getenv("GEM_API_KEY")
 genai.configure(api_key=gemini_api_key)
-modelo_vision = genai.GenerativeModel("gemini-2.0-flash", generation_config={"temperature": 0.1})
+modelo_vision = genai.GenerativeModel("gemini-1.5-flash", generation_config={"temperature": 0.1})
 modelo_texto = genai.GenerativeModel("gemini-1.5-flash")
 
 # Conexão com MongoDB
